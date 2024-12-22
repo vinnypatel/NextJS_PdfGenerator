@@ -196,7 +196,7 @@ const PdfGenerator: React.FC = () => {
   
     return (
       <div style={{ textAlign: "center", padding: "20px" }}>
-        <h1>Generate PDF with Dynamic Spacing</h1>
+        <h1>Generate PDF</h1>
   
         {/* File Input */}
         <input
