@@ -1,11 +1,19 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { jsPDF } from "jspdf";
+import Header from "@/components/Header";
+import { firestore } from "@/Utilis/Firebase";
+import { doc, getDoc } from "firebase/firestore"
+import Loader from "@/components/Loader";
+import { useRouter } from "next/navigation";
 
 const PdfGenerator: React.FC = () => {
+    const [loading, setLoading] = useState(false);
+    const [title, setTitle] = useState("");
     const [images, setImages] = useState<string[]>([]);
-  
+    const [userId, setUserId] = useState("");
+    const [user, setUser] = useState({});
+    const router = useRouter();
     // Handle file selection
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
@@ -14,9 +22,57 @@ const PdfGenerator: React.FC = () => {
         setImages(imageUrls);
       }
     };
+
+    useEffect(() => {
+      const storedUserId = localStorage.getItem("user");
+      console.log("Stored user ID:", storedUserId);
+      if (storedUserId) {
+        console.log("Stored user ID:", storedUserId);
+        setUserId(storedUserId);
+      } else {
+        router.push("/");
+      }
+    }, []);
+
+    useEffect(() => {
+
+      if (!userId) {
+        return;
+      }
+      const fetchUser = async () => {
+        setTitle(`Loading User Details...`);
+        setLoading(true);
+        try {
+          const userDocRef = doc(firestore, "users", userId); // Reference to the user document
+          const docSnap = await getDoc(userDocRef); // Get document snapshot
+  
+          if (docSnap.exists()) {
+            console.log("User data:", docSnap.data());
+            setUser(docSnap.data());
+            // setUser({ id: docSnap.id, ...docSnap.data() });
+          } else {
+            setUser({fullName: "Guest", email: "Guest"});
+            // setError("User not found");
+          }
+        } catch (error) {
+          console.error("Error fetching user details: ", error);
+          // setError("Error fetching user data");
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchUser();
+    }, [userId]);
   
     // Generate PDF with dynamically calculated space
     const generatePDF = () => {
+        if (images.length === 0) {
+          alert("Please select at least one image.");
+          return;
+        }
+        setLoading(true);
+        setTitle(`Generating PDF...`);
         const pdf = new jsPDF("p", "mm", "a4"); // Portrait mode, millimeters, A4 size
     
         const pageWidth = 210; // A4 width in mm
@@ -73,6 +129,7 @@ const PdfGenerator: React.FC = () => {
             // Save the PDF when all images are loaded
             if (imagesAdded === images.length) {
               pdf.save("images_with_dynamic_spacing.pdf");
+              setLoading(false);
             }
           };
         });
@@ -195,10 +252,11 @@ const PdfGenerator: React.FC = () => {
     //   };
   
     return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        <h1>Generate PDF</h1>
-  
+      <>
+      <Header user={user}/>
+      <div className="relative " style={{ textAlign: "center", padding: "20px" }}>
         {/* File Input */}
+        {loading && <Loader title={title} />}
         <input
           type="file"
           accept="image/*"
@@ -230,6 +288,7 @@ const PdfGenerator: React.FC = () => {
           Generate PDF
         </button>
       </div>
+      </>
     );
   };
 

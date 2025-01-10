@@ -1,7 +1,8 @@
-import PdfGenerator from "@/components/PDFGenerator";
-
+import LoginPage from "@/components/Login";
 export default function Home() {
   return (
-    <PdfGenerator/>
+    // <PdfGenerator/>
+    <LoginPage/>
+    // <SignUpPage/>
   );
 }
